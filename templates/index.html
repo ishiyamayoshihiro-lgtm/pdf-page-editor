@@ -1,0 +1,62 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDFページ並べ替え</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; background-color: #f4f4f9; color: #333; }
+        .container { max-width: 1200px; margin: auto; }
+        h1 { text-align: center; color: #444; }
+        .upload-section, .controls, .status, .download-section { background: #fff; padding: 1.5em; margin-bottom: 1em; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        #gallery { display: flex; flex-wrap: wrap; gap: 15px; padding: 10px; background: #e8e8f0; border-radius: 8px; min-height: 100px; }
+        .page-container { position: relative; border: 2px solid #ccc; border-radius: 5px; padding: 5px; text-align: center; background: #fff; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
+        .page-container.selected { border-color: #007bff; box-shadow: 0 0 10px rgba(0,123,255,0.5); }
+        .page-container img { max-width: var(--thumbnail-width, 150px); display: block; }
+        .page-number { font-size: 0.9em; margin-top: 5px; color: #555; }
+        .order-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); color: #007bff; font-size: 3em; font-weight: bold; display: flex; align-items: center; justify-content: center; border-radius: 5px; pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+        .page-container.selected .order-overlay { opacity: 1; }
+        button { background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 1em; transition: background-color 0.2s; }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        #status { font-weight: bold; color: #d9534f; }
+        #download-link { display: none; margin-top: 1em; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PDFページ並べ替え</h1>
+        
+        <div class="upload-section">
+            <h2>1. PDFファイルを選択</h2>
+            <input type="file" id="pdf-file-input" accept=".pdf">
+            <button id="upload-button">アップロードして開始</button>
+        </div>
+
+        <div class="status">
+            <p id="status"></p>
+        </div>
+
+        <div class="controls">
+            <h2>2. ページをクリックして順番を指定</h2>
+            <button id="apply-order-button" disabled>並べ替えを適用</button>
+            <button id="clear-selection-button" disabled>選択をクリア</button>
+            <div class="slider-container">
+                <label for="size-slider">サムネイルサイズ:</label>
+                <input type="range" id="size-slider" min="100" max="400" value="150">
+            </div>
+        </div>
+
+        <div id="gallery"></div>
+
+        <div class="download-section">
+            <h2>3. 並べ替えたPDFを保存</h2>
+            <button id="save-button" disabled>PDFを生成して保存</button>
+            <a id="download-link" href="#" download="reordered.pdf">ダウンロード準備完了！ここをクリック</a>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+
+# Python
+__pycache__/
+*.pyc
+
+# Gemini CLI generated folders
+uploads/
+thumbnails/
+output/
+
+# OS generated files
+.DS_Store
