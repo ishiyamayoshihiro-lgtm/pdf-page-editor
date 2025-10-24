@@ -1,0 +1,548 @@
+:root {
+    --thumbnail-width: 200px; /* デフォルトのサムネイル高さ */
+}
+
+body {
+    font-family: sans-serif;
+    margin: 2em;
+    background-color: #f4f4f9;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+}
+
+h1 {
+    text-align: center;
+    color: #444;
+}
+
+/* タブナビゲーション */
+.tab-navigation {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #ddd;
+}
+
+.tab-button {
+    background-color: transparent;
+    color: #666;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1.1em;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s;
+}
+
+.tab-button:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.tab-button.active {
+    color: #007bff;
+    border-bottom-color: #007bff;
+    font-weight: bold;
+}
+
+/* 履歴ボタン */
+.history-button {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    font-size: 0.95em;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+}
+
+.history-button:hover:not(:disabled) {
+    background-color: #5a6268;
+}
+
+.history-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* タブコンテンツ */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* セクション */
+.upload-section, .controls, .status, .download-section {
+    background: #fff;
+    padding: 1.5em;
+    margin-bottom: 1em;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* スティッキーコントロール */
+.controls.sticky {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    margin-bottom: 1em;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* コントロールエリアの見出しと説明文 */
+.controls h2 {
+    margin-top: 0;
+}
+
+.controls .description {
+    margin-bottom: 15px;
+    color: #666;
+}
+
+/* 画面が小さい時は説明文を非表示 */
+@media (max-height: 700px) {
+    .controls.sticky .description {
+        display: none;
+    }
+    .controls.sticky h2 {
+        font-size: 1.2em;
+        margin-bottom: 10px;
+    }
+}
+
+/* ギャラリー */
+#gallery-upload, #gallery-split, #gallery-delete, #gallery-edit, #gallery-reorder, #gallery-mask, #gallery-save {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 10px;
+    background: #e8e8f0;
+    border-radius: 8px;
+    min-height: 100px;
+}
+
+.page-container {
+    position: relative;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    padding: 5px;
+    text-align: center;
+    background: #fff;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.page-container.selected {
+    border-color: #007bff;
+    box-shadow: 0 0 10px rgba(0,123,255,0.5);
+}
+
+.page-container.single-selected {
+    border-color: #28a745;
+    box-shadow: 0 0 15px rgba(40,167,69,0.6);
+    transform: scale(1.05);
+}
+
+.page-container.selected-delete {
+    border-color: #dc3545;
+    box-shadow: 0 0 10px rgba(220,53,69,0.5);
+}
+
+.page-container.selected-edit {
+    border-color: #ffc107;
+    box-shadow: 0 0 10px rgba(255,193,7,0.6);
+}
+
+.page-container.selected-split {
+    border-color: #8a2be2; /* BlueViolet */
+    box-shadow: 0 0 10px rgba(138,43,226,0.6);
+}
+
+.page-container.selected-reorder {
+    border-color: #28a745; /* Success Green */
+    box-shadow: 0 0 10px rgba(40, 167, 69, 0.6);
+}
+
+.page-container.selected-mask {
+    border-color: #17a2b8; /* Info Cyan */
+    box-shadow: 0 0 15px rgba(23, 162, 184, 0.8);
+    transform: scale(1.05);
+}
+
+.page-container.ordered {
+    background-color: #e6f7ff; /* Light blue background for ordered items */
+}
+
+.page-container img {
+    height: var(--thumbnail-width, 200px);
+    width: auto;
+    display: block;
+    object-fit: contain;
+}
+
+.page-number {
+    font-size: 0.9em;
+    margin-top: 5px;
+    color: #555;
+}
+
+.order-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.7);
+    color: #007bff;
+    font-size: 3em;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.page-container.selected .order-overlay,
+.page-container.ordered .order-overlay {
+    opacity: 1;
+}
+
+.delete-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(220,53,69,0.85);
+    color: white;
+    font-size: 3em;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.page-container.selected-delete .delete-overlay {
+    opacity: 1;
+}
+
+.page-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* ボタン */
+button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* ボタングループ */
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+/* 移動コントロール */
+.move-controls {
+    margin-bottom: 15px;
+    padding: 15px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+}
+
+.move-controls h3 {
+    margin: 0 0 10px 0;
+    font-size: 1em;
+    color: #555;
+}
+
+.move-controls button {
+    margin-right: 10px;
+}
+
+/* スライダー */
+.slider-container {
+    margin-top: 15px;
+}
+
+/* ステータス */
+#status-split, #status-reorder {
+    font-weight: bold;
+    color: #d9534f;
+}
+
+/* ダウンロードリンク */
+#download-link-split, #download-link-reorder {
+    display: none;
+    margin-top: 1em;
+    font-weight: bold;
+}
+
+/* ファイル入力セクション */
+.file-inputs-container {
+    margin: 20px 0;
+}
+
+.file-input-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 10px;
+}
+
+.file-input-label {
+    min-width: 180px;
+    font-weight: 500;
+    color: #555;
+}
+
+.pdf-file-input {
+    flex-shrink: 0;
+}
+
+.filename-display {
+    flex: 1;
+    color: #007bff;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 5px 10px;
+    background-color: #f0f8ff;
+    border-radius: 4px;
+    border: 1px solid #d0e8ff;
+    min-height: 28px;
+    display: inline-block;
+    cursor: default;
+}
+
+.filename-display:empty {
+    background-color: transparent;
+    border-color: transparent;
+}
+
+/* モーダル */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    color: #333;
+    font-size: 1.5em;
+}
+
+.modal-content p {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.modal-input-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 25px;
+    gap: 5px;
+}
+
+#filename-input {
+    flex: 1;
+    padding: 12px 15px;
+    font-size: 1.1em;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+#filename-input:focus {
+    border-color: #007bff;
+}
+
+.pdf-extension {
+    font-size: 1.1em;
+    color: #666;
+    font-weight: 500;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.modal-primary-button {
+    background-color: #007bff;
+    color: white;
+    padding: 12px 30px;
+    font-size: 1.1em;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.modal-primary-button:hover {
+    background-color: #0056b3;
+}
+
+.modal-secondary-button {
+    background-color: #6c757d;
+    color: white;
+    padding: 12px 30px;
+    font-size: 1.1em;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.modal-secondary-button:hover {
+    background-color: #5a6268;
+}
+
+/* マスキング用スタイル */
+.mask-layout {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    align-items: flex-start;
+}
+
+.mask-canvas-wrapper {
+    flex: 0 0 auto;
+    max-width: 50%;
+}
+
+#mask-canvas-container {
+    position: relative;
+    display: inline-block;
+}
+
+#mask-canvas {
+    border: 2px solid #ccc;
+    cursor: crosshair;
+    max-width: 100%;
+    max-height: 70vh;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.mask-gallery-wrapper {
+    flex: 1;
+    min-width: 0;
+    background: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.mask-gallery-wrapper h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #444;
+    font-size: 1.2em;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 10px;
+}
+
+#gallery-mask {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px;
+    background: #e8e8f0;
+    border-radius: 8px;
+}
+
+/* マスキングギャラリー内のサムネイルを小さく */
+#gallery-mask .page-container {
+    flex: 0 0 auto;
+}
+
+#gallery-mask .page-container img {
+    height: 120px !important;
+    width: auto;
+}
+
+.mask-selection-box {
+    position: absolute;
+    border: 2px dashed #ff0000;
+    background-color: rgba(255, 0, 0, 0.1);
+    pointer-events: none;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 1024px) {
+    .mask-layout {
+        flex-direction: column;
+    }
+
+    .mask-canvas-wrapper {
+        max-width: 100%;
+    }
+
+    .mask-gallery-wrapper {
+        max-height: 400px;
+    }
+}

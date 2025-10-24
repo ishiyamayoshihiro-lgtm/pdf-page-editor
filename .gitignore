@@ -1,12 +1,43 @@
+# PDF編集アプリ用 .gitignore
 
-# Python
-__pycache__/
-*.pyc
+# ログファイル
+*.txt
+!requirements.txt
 
-# Gemini CLI generated folders
+# アップロードされたファイルと一時ファイル
 uploads/
 thumbnails/
 output/
+history/
 
-# OS generated files
+# 一時ファイル
+nul
+*.tmp
+
+# Python関連
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# IDE設定
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Claude Code設定
+.claude/
+
+# OS生成ファイル
 .DS_Store
+Thumbs.db
+desktop.ini
+
+# 個人情報・アカウント情報
+# GitHub.txt は除外しないことにしました（手順メモとして残す）
