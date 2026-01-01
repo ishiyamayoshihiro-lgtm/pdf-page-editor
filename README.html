@@ -272,6 +272,26 @@ py app.py</code></pre>
 <li>ブラウザの開発者ツール（F12）のコンソールでエラーを確認</li>
 </ul>
 <h2>更新履歴</h2>
+<h3>2026-01-01</h3>
+<ul>
+<li><strong>オンラインデプロイ対応</strong>: PythonAnywhereへのデプロイに対応し、インターネット経由でどこからでもアクセス可能に</li>
+<li>オンライン版URL: <a href="https://ishpdfeditor.pythonanywhere.com" target="_blank">https://ishpdfeditor.pythonanywhere.com</a></li>
+<li>オンライン版とローカル版の両方で使用可能（状況に応じて使い分け可能）</li>
+<li>完全無料でクレジットカード不要のPythonAnywhereを使用</li>
+<li>HTTPS対応で安全にアクセス可能</li>
+<li><strong>デプロイ関連ファイルの追加</strong>:
+<ul>
+<li><code>requirements.txt</code>: パッケージ依存関係の定義</li>
+<li><code>DEPLOYMENT.md</code>: 詳細なデプロイ手順書</li>
+<li><code>pythonanywhere_wsgi.py</code>: PythonAnywhere用WSGI設定テンプレート</li>
+<li><code>QUICKSTART.md</code>: オンライン版とローカル版の比較ガイド</li>
+</ul>
+</li>
+<li><strong>README.html更新</strong>: クイックスタートセクションをオンライン版優先に変更</li>
+<li>オンライン版を緑色のボックスで目立つように表示</li>
+<li>ローカル版は「オンライン版が使えない場合」の選択肢として配置</li>
+<li>本番環境対応: ファイルサイズ制限（50MB）と環境変数による動作切り替えを実装</li>
+</ul>
 <h3>2025-12-08</h3>
 <ul>
 <li><strong>ファイル分割UI改善</strong>: サムネイル間の縦線（分割線）のクリック判定を改善</li>
