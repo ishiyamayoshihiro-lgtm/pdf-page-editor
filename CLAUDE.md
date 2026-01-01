@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a PDF editing web application built with Flask that allows users to visually manipulate PDF files through a browser interface. The application provides a tabbed interface for uploading, splitting, deleting, rotating, and reordering PDF pages with real-time thumbnail previews.
+This is a PDF editing web application built with Flask that allows users to visually manipulate PDF files through a browser interface. The application provides a tabbed interface for uploading (including drag-and-drop), splitting, deleting, rotating, reordering, masking, and saving PDF pages with real-time thumbnail previews. It includes advanced features like image PDF conversion (to resolve font issues) and individual page file export.
 
 ## Running the Application
 
@@ -56,11 +56,13 @@ The Flask application maintains a single shared PDF file (`uploaded.pdf`) that g
 **Helper Functions**:
 - `_regenerate_pdf_and_thumbnails()` - Core function that rebuilds the PDF based on a new page order
 - `_generate_thumbnails_and_response()` - Creates PNG thumbnails at 72 DPI using PyMuPDF and returns JSON response
+- `_save_history()` - Saves the current PDF state to history for undo/redo functionality (max 20 states)
 
 **File Storage Structure**:
 - `uploads/` - Contains single `uploaded.pdf` (the working file)
 - `thumbnails/` - PNG thumbnails named `page_{i}.png` with cache-busting timestamps
-- `output/` - Generated PDFs available for download
+- `output/` - Generated PDFs available for download (including ZIP files for split-to-files)
+- `history/` - Backup PDF files for undo/redo functionality (`history_0.pdf`, `history_1.pdf`, etc.)
 
 ### Frontend Architecture (static/script.js, templates/index.html)
 
@@ -69,13 +71,15 @@ The Flask application maintains a single shared PDF file (`uploaded.pdf`) that g
 - Each tab maintains its own selection state arrays (e.g., `selectedPagesToDelete`, `clickedOrder`)
 
 **Tab System**:
-The UI has 6 tabs that all operate on the same underlying PDF:
+The UI has 8 tabs that all operate on the same underlying PDF:
 1. Upload - Add up to 5 PDFs at once (pages concatenated in selection order) and clear all
-2. Split - Divide landscape-oriented pages into left/right halves
+2. Split (見開き分割) - Divide landscape-oriented pages into left/right halves
 3. Delete - Remove selected pages
 4. Edit - Rotate pages 90° left/right, swap odd/even, reverse all
 5. Reorder - Visual reordering using click-to-order (with circled numbers ①②③) or prev/next buttons
-6. Save - Preview and download the final edited PDF
+6. Mask - Apply black masking to specific areas of pages
+7. Split Files (個別ファイル保存) - Split each page into individual PDF files and download as ZIP
+8. Save - Preview and download the final edited PDF
 
 **Gallery Population Pattern**:
 Each tab has its own `populateGallery*()` function that renders thumbnails and attaches tab-specific click handlers. When switching tabs, `loadDataToActiveTab()` re-renders the appropriate gallery with current state.
@@ -119,6 +123,8 @@ After any backend operation that modifies the PDF:
 ## Tab-Specific Behaviors
 
 **Upload Tab**:
+- Supports both file input selection and drag-and-drop for uploading.
+- A dedicated drop zone is placed to the right of the file input controls for intuitive drag-and-drop functionality.
 - Features 5 separate file input fields (templates/index.html:30-54) allowing batch file selection
 - Each file input has an associated filename display area that shows the complete filename
 - Filenames use ellipsis overflow with hover tooltips for long names (static/style.css:280-299)
@@ -126,7 +132,7 @@ After any backend operation that modifies the PDF:
 - Multiple uploads append pages to the existing PDF
 - The `/clear_all` endpoint is automatically called on page load to ensure a clean state
 
-**Split Tab**: Only processes landscape-oriented pages (width > height). Can operate on selected pages or all pages. Generates a downloadable PDF (`split.pdf`) immediately, unlike other tabs that only update `uploaded.pdf`.
+**Split Tab (見開き分割)**: Only processes landscape-oriented pages (width > height). Can operate on selected pages or all pages. Generates a downloadable PDF (`split.pdf`) immediately, unlike other tabs that only update `uploaded.pdf`.
 
 **Delete Tab**: Shows a red `×` overlay on hover. Selected pages are removed by rebuilding the PDF without those pages using `_regenerate_pdf_and_thumbnails()`.
 
@@ -142,7 +148,25 @@ After any backend operation that modifies the PDF:
    - CSS updated (static/style.css:162-164) to show overlay for both `.selected` and `.ordered` classes
 2. **Prev/Next mode**: `selectedPagesToMove` array - uses DOM manipulation to physically move selected elements
 
-**Save Tab**: Read-only gallery that uses the `/reorder` endpoint to generate the final `reordered.pdf` and triggers automatic download.
+**Mask Tab**:
+- Allows drawing rectangular masks on PDF pages using mouse drag on a canvas
+- Supports batch masking with interval and offset settings to apply same mask to multiple pages
+- Uses PyMuPDF to draw black rectangles over specified areas
+- Mask coordinates are normalized (0-1) for consistency across different page sizes
+
+**Split Files Tab (個別ファイル保存)**:
+- Splits the PDF into individual files, one per page
+- Each page saved as `filename_1.pdf`, `filename_2.pdf`, etc.
+- All files packaged into a ZIP for download
+- **Image PDF Option**: Can convert pages to image-based PDFs to avoid font issues
+- DPI selection: 96/150/200/300 for quality control
+- Uses PyMuPDF for image conversion and pypdf for standard splitting
+
+**Save Tab**:
+- Read-only gallery that uses the `/reorder` endpoint to generate the final `reordered.pdf`
+- Triggers automatic download with custom filename
+- **Image PDF Conversion**: Optional feature to convert entire PDF to image-based format
+- Helps resolve font compatibility issues across different PDF viewers
 
 ## Common Development Patterns
 

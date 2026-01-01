@@ -1,43 +1,54 @@
-<\!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PDF編集Webアプリ - README</title>
-<style>body{max-width:800px;margin:40px auto;padding:0 20px;font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;line-height:1.6;color:#333}h1,h2,h3{margin-top:24px;margin-bottom:16px;font-weight:600;line-height:1.25}h1{font-size:2em;border-bottom:1px solid #eaecef;padding-bottom:0.3em}h2{font-size:1.5em;border-bottom:1px solid #eaecef;padding-bottom:0.3em}h3{font-size:1.25em}code{background-color:#f6f8fa;padding:0.2em 0.4em;margin:0;font-size:85%;border-radius:3px}pre{background-color:#f6f8fa;padding:16px;overflow:auto;font-size:85%;line-height:1.45;border-radius:6px}pre code{background-color:transparent;padding:0}a{color:#0366d6;text-decoration:none}a:hover{text-decoration:underline}ul,ol{padding-left:2em}li{margin-top:0.25em}blockquote{padding:0 1em;color:#6a737d;border-left:0.25em solid #dfe2e5;margin:0}.quick-start{background-color:#fff3cd;border:2px solid #ffc107;border-radius:8px;padding:20px;margin:20px 0;box-shadow:0 2px 8px rgba(0,0,0,0.1)}.quick-start h2{margin-top:0;color:#856404;border-bottom:none;font-size:1.4em}.quick-start ol{margin:10px 0;padding-left:1.5em}.quick-start li{margin-top:8px;font-size:1.05em}.quick-start strong{color:#856404}.quick-start .file-name{background-color:#fff;padding:4px 8px;border-radius:4px;font-family:monospace;font-weight:bold;color:#d73a49;border:1px solid #e1e4e8}</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF編集Webアプリ Readme</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; line-height: 1.6; color: #24292e; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1, h2, h3 { border-bottom: 1px solid #eaecef; padding-bottom: .3em; }
+        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; background-color: rgba(27,31,35,.05); padding: .2em .4em; margin: 0; font-size: 85%; border-radius: 3px; }
+        pre { background-color: #f6f8fa; border-radius: 6px; font-size: 85%; line-height: 1.45; overflow: auto; padding: 16px; }
+        pre code { background-color: transparent; border: 0; padding: 0; margin: 0; }
+        table { border-collapse: collapse; margin-top: 1em; margin-bottom: 1em; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+        th { background-color: #f2f2f2; font-weight: 600; }
+        ul { padding-left: 2em; }
+    </style>
 </head>
 <body>
 <h1>PDF編集Webアプリ</h1>
-
-<div class="quick-start">
+<p>書類等をスキャンした際に、見開きページの分割、不要ページの削除、ページの回転、順序の整理などを視覚的に行い、見やすいPDFに仕上げるためのWebアプリケーションです。</p>
 <h2>🚀 クイックスタート（初めての方）</h2>
 <ol>
-<li><strong>このフォルダ内の <span class="file-name">start_server.bat</span> をダブルクリック</strong>してください</li>
+<li><strong>このフォルダ内の <code>start_server.bat</code> をダブルクリック</strong>してください</li>
 <li>黒い画面（コマンドプロンプト）が開いてサーバーが起動します</li>
-<li>ブラウザで <a href="http://127.0.0.1:5000" target="_blank"><strong>http://127.0.0.1:5000</strong></a> を開いてください（このリンクをクリック）</li>
+<li>ブラウザで <a href="http://127.0.0.1:5000" target="_blank">http://127.0.0.1:5000</a> を開いてください</li>
 <li>使い終わったら、黒い画面で <code>Ctrl+C</code> を押してサーバーを終了します</li>
 </ol>
 <p><strong>注意</strong>: 初回起動時にエラーが出る場合は、下記の「セットアップ」を先に行ってください。</p>
-</div>
-
-<p>書類等をスキャンした際に、見開きページの分割、不要ページの削除、ページの回転、順序の整理などを視覚的に行い、見やすいPDFに仕上げるためのWebアプリケーションです。</p>
 <h2>使用目的</h2>
 <p>スキャナーで書類をスキャンする際によくある問題を解決します：
 - 📖 <strong>見開きページの分割</strong>: 本や資料を見開きでスキャンした場合、左右を別々のページに分割
 - 🗑️ <strong>不要ページの削除</strong>: 空白ページや不要な表紙などを簡単に削除
 - 🔄 <strong>ページの回転</strong>: 向きが間違っているページを正しい向きに修正
 - 📑 <strong>ページの並べ替え</strong>: スキャン順が前後してしまったページを正しい順序に整理
+- 🖍️ <strong>マスキング（黒塗り）</strong>: 個人情報や機密情報を黒塗りで隠す
+- ✂️ <strong>ファイル分割</strong>: PDFを複数のファイルに分割して個別に保存
+- 📄 <strong>個別ファイル保存</strong>: 各ページを個別のPDFファイルとしてZIP保存
+- 🖼️ <strong>画像PDF変換</strong>: フォント問題を回避するため画像ベースのPDFに変換
 - 💾 <strong>1クリックで保存</strong>: 編集結果をワンクリックでPDFとしてダウンロード</p>
 <p>すべての操作がブラウザ上で完結し、サムネイルを見ながら直感的に編集できます。</p>
 <h2>主な機能</h2>
 <h3>PDFの追加とクリア</h3>
 <ul>
+<li><strong>ドラッグ＆ドロップ対応</strong>: ファイル選択ボタンの右側にある専用エリアにファイルをドラッグ＆ドロップして簡単アップロード</li>
 <li>PDFファイルを最大5つまでまとめて選択してアップロード</li>
 <li>選択したファイル名が完全に表示され、ホバーで全体を確認可能</li>
 <li>選択した順にページが追加されます</li>
 <li>全ページをクリアして最初からやり直し</li>
 </ul>
-<h3>ページ分割</h3>
+<h3>見開き分割</h3>
 <ul>
 <li>横長ページ（見開きでスキャンしたページ）を自動検出して左右に分割</li>
 <li>選択したページのみ分割、または全ての横長ページを一括分割</li>
@@ -60,108 +71,161 @@
 <li><strong>方法2</strong>: 1ページを選択して「前へ」「次へ」ボタンで位置を微調整</li>
 <li>偶数・奇数ページ入れ替え、全ページ逆順などの操作も可能</li>
 </ul>
+<h3>マスキング（黒塗り）</h3>
+<ul>
+<li>PDFの特定領域を黒塗りで隠すことができます</li>
+<li>ページを選択すると大きなキャンバスに表示され、マウスドラッグで範囲指定</li>
+<li>ページ間隔とオフセットを指定して、複数ページに同じ位置のマスキングを一括適用</li>
+<li>個人情報や機密情報を隠すのに便利</li>
+</ul>
+<h3>ファイル分割</h3>
+<ul>
+<li>サムネイル間の縦線をクリックして分割位置を指定</li>
+<li>複数の分割線を設定してPDFを複数のファイルに分割</li>
+<li>各パートのファイル名を個別に指定可能</li>
+<li>「保存不要」チェックボックスで不要なパートをスキップ</li>
+<li>日本語ファイル名に完全対応（個別ダウンロード方式）</li>
+<li><strong>使用例</strong>: 10ページのPDFで3ページ目と7ページ目に分割線を入れると「1～3ページ」「4～7ページ」「8～10ページ」の3つに分割。不要なパートにチェックを入れると保存されません</li>
+</ul>
+<h3>個別ファイル保存</h3>
+<ul>
+<li>PDFの各ページを個別のPDFファイルとして保存</li>
+<li>例：「資料.pdf」（5ページ）→「資料_1.pdf」「資料_2.pdf」...をZIPでまとめてダウンロード</li>
+<li><strong>画像PDF変換オプション</strong>: フォント問題を回避するため、各ページを画像PDFとして保存可能</li>
+<li>画質（DPI）を選択可能: 96/150/200/300 DPI</li>
+</ul>
 <h3>PDFを保存</h3>
 <ul>
 <li>現在の編集状態をプレビュー</li>
 <li>「名前をつけてダウンロード」ボタンで保存</li>
 <li>最初にアップロードしたファイル名が自動入力される</li>
 <li>ファイル名を自由に変更してダウンロード可能</li>
+<li><strong>画像PDF変換機能</strong>: フォントが正しく表示されない問題を解決</li>
+<li>PDFを画像ベースのPDFに変換して保存（画質選択可能）</li>
 </ul>
 <h3>共通機能</h3>
 <ul>
 <li>すべてのタブで編集内容が共有され、シームレスに作業可能</li>
 <li>サムネイルサイズをスライダーで調整可能</li>
 <li>タブ切り替えはキャッシュされ、高速に動作</li>
+<li><strong>Undo/Redo機能</strong>: 元に戻す（Ctrl+Z）・やり直す（Ctrl+Y）ボタンで操作を取り消し/やり直し</li>
+<li>最大20個の履歴を保存し、いつでも前の状態に戻せます</li>
 <li><strong>スティッキーヘッダー</strong>: 編集タブでスクロールしても操作ボタンが画面上部に固定</li>
 <li>画面が小さい時は説明文を自動的に非表示にして操作領域を確保</li>
 <li>ブラウザ更新時は自動的にクリーンな状態に戻ります</li>
 </ul>
-<h2>セットアップ</h2>
-<h3>必要な環境</h3>
-<ul>
-<li>Python 3.7以上</li>
-</ul>
-<h3>Windows の場合</h3>
+<h2>セットアップ（初回のみ）</h2>
+<p><code>start_server.bat</code> を実行してエラーが出る場合は、以下の3ステップでセットアップしてください：</p>
+
+<h3>📝 3ステップでセットアップ</h3>
 <ol>
 <li>
-<p><strong>Pythonのインストール確認</strong>:
-    <code>bash
-    python --version
-    # または
-    py --version</code></p>
-<p>インストールされていない場合は <a href="https://www.python.org/downloads/">Python公式サイト</a>からダウンロードしてください。
-<strong>重要</strong>: インストール時に「Add Python to PATH」にチェックを入れてください。</p>
+<p><strong>Pythonをインストール</strong>（入っていない場合のみ）<br>
+<a href="https://www.python.org/downloads/" target="_blank">Python公式サイト</a>からダウンロードしてインストール<br>
+<strong>重要</strong>: インストール時に「Add Python to PATH」にチェックを入れてください</p>
 </li>
 <li>
-<p><strong>プロジェクトのディレクトリに移動</strong>:
-    コマンドプロンプトを開き、このアプリのフォルダに移動します。</p>
-<p>例えば、<code>C:\Users\YourName\Downloads\PDF_ページ編集</code> にアプリがある場合:
-<code>bash
-cd C:\Users\YourName\Downloads\PDF_ページ編集</code></p>
-<p><strong>簡単な方法</strong>: エクスプローラーでこのフォルダを開き、アドレスバーに <code>cmd</code> と入力してEnterを押すと、そのフォルダでコマンドプロンプトが開きます。</p>
+<p><strong>このフォルダでコマンドプロンプトを開く</strong><br>
+エクスプローラーでこのフォルダを開き、アドレスバーに <code>cmd</code> と入力してEnter</p>
 </li>
 <li>
-<p><strong>必要なライブラリのインストール</strong>:
-    <code>bash
-    pip install Flask PyMuPDF pypdf
-    # または
-    py -m pip install Flask PyMuPDF pypdf</code></p>
+<p><strong>必要なライブラリをインストール</strong><br>
+以下のコマンドをコピーして貼り付けてEnter:</p>
+<pre><code>pip install Flask PyMuPDF pypdf</code></pre>
+<p>うまくいかない場合は以下も試してください:</p>
+<pre><code>py -m pip install Flask PyMuPDF pypdf</code></pre>
 </li>
 </ol>
-<h3>Mac の場合</h3>
+
+<h3>💡 それでもうまくいかない場合</h3>
+<p>下記のリンクから Gemini に質問してみてください。「Python」「Flask」「PyMuPDF」「pypdf」のインストール方法を教えてくれます：</p>
+<p><a href="https://gemini.google.com/app?hl=ja" target="_blank" style="display: inline-block; background-color: #4285f4; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; margin: 10px 0;">Gemini で質問する</a></p>
+<p>Gemini への質問例:<br>
+「<strong>WindowsでPythonとFlask、PyMuPDF、pypdfをインストールする手順を教えて</strong>」</p>
+
+<h3>Mac をお使いの場合</h3>
 <ol>
-<li>
-<p><strong>Pythonのインストール確認</strong>:
-    <code>bash
-    python3 --version</code></p>
-<p>インストールされていない場合:
-<code>bash
-brew install python3</code></p>
-</li>
-<li>
-<p><strong>プロジェクトのディレクトリに移動</strong>:
-    ターミナルを開き、このアプリのフォルダに移動します。</p>
-<p>例えば、<code>/Users/YourName/Downloads/PDF_ページ編集</code> にアプリがある場合:
-<code>bash
-cd /Users/YourName/Downloads/PDF_ページ編集</code></p>
-<p><strong>簡単な方法</strong>: Finderでこのフォルダを開き、フォルダを右クリック→「サービス」→「フォルダに新規ターミナル」を選択すると、そのフォルダでターミナルが開きます。</p>
-</li>
-<li>
-<p><strong>必要なライブラリのインストール</strong>:
-    <code>bash
-    pip3 install Flask PyMuPDF pypdf</code></p>
+<li>ターミナルを開く（Finder → アプリケーション → ユーティリティ → ターミナル）</li>
+<li>このアプリのフォルダに移動（例: <code>cd ~/Downloads/PDF_ページ編集</code>）</li>
+<li>以下を実行:
+<pre><code>pip3 install Flask PyMuPDF pypdf</code></pre>
 </li>
 </ol>
-<h2>実行方法</h2>
-<h3>Windows</h3>
-<pre><code class="language-bash">python app.py
+
+<h2>起動方法</h2>
+<h3>簡単な方法（Windows）</h3>
+<p><code>start_server.bat</code> をダブルクリック → ブラウザで <a href="http://127.0.0.1:5000" target="_blank">http://127.0.0.1:5000</a> を開く</p>
+
+<h3>コマンドで起動する方法</h3>
+<p><strong>Windows:</strong></p>
+<pre><code>python app.py
 # または
-py app.py
-</code></pre>
-<h3>Mac</h3>
-<pre><code class="language-bash">python3 app.py
-</code></pre>
-<p>サーバーが起動したら、ブラウザで <a href="http://127.0.0.1:5000" target="_blank"><strong>http://127.0.0.1:5000</strong></a> にアクセスしてください。</p>
-<h2>使い方の流れ</h2>
-<h3>基本的な使い方</h3>
+py app.py</code></pre>
+<p><strong>Mac:</strong></p>
+<pre><code>python3 app.py</code></pre>
+<p>サーバーが起動したら、ブラウザで <a href="http://127.0.0.1:5000" target="_blank">http://127.0.0.1:5000</a> にアクセスしてください。</p>
+<h2>使い方</h2>
+
+<h3>📱 基本的な流れ</h3>
 <ol>
-<li><strong>PDFの追加とクリア</strong>タブでPDFファイルをアップロード</li>
-<li>各タブ（分割、削除、編集、並べ替え）で必要な編集を実行</li>
-<li>タブは任意の順序で使用可能</li>
-<li>編集内容はすべてのタブで共有されます</li>
-<li><strong>PDFを保存</strong>タブで最終確認し、「名前をつけてダウンロード」をクリック</li>
-<li>最初にアップロードしたファイル名が入力欄に表示されます</li>
-<li>必要に応じてファイル名を変更できます</li>
+<li><strong>取り込み</strong> → 「PDFの追加とクリア」タブでPDFをアップロード（ドラッグ&amp;ドロップまたはファイル選択）</li>
+<li><strong>編集</strong> → 各タブで必要な編集作業を行う（順序は自由）
+<ul>
+<li>📖 見開き分割：横長ページを左右に分割</li>
+<li>🗑️ ページ削除：不要なページを削除</li>
+<li>🔄 ページ編集：回転、ページ入れ替え、逆順など</li>
+<li>📑 ページ並べ替え：クリック順または前後移動で並べ替え</li>
+<li>🖍️ マスキング：黒塗りで情報を隠す</li>
+</ul>
+</li>
+<li><strong>保存</strong> → 編集結果を保存
+<ul>
+<li>✂️ ファイル分割保存：PDFを複数ファイルに分割してダウンロード</li>
+<li>📄 個別ページ保存：各ページを個別のPDFファイルとしてZIP保存</li>
+<li>💾 全体を保存：編集したPDFをまるごとダウンロード</li>
+</ul>
+</li>
 </ol>
-<h3>典型的な使用例：見開きスキャンした本を整理</h3>
+
+<h3>💡 よくある使い方</h3>
+
+<h4>パターン1：見開きスキャンした本を整理</h4>
 <ol>
-<li><strong>PDFの追加</strong>: スキャンしたPDFをアップロード</li>
-<li><strong>ページ分割</strong>: 「すべての横長ページを分割」で見開きを左右に分割</li>
-<li><strong>ページ削除</strong>: 空白ページや表紙など不要なページを削除</li>
-<li><strong>ページ編集</strong>: 向きが逆のページを回転</li>
-<li><strong>ページ並べ替え</strong>: 必要に応じてページ順を調整</li>
-<li><strong>PDFを保存</strong>: 編集結果をダウンロード</li>
+<li>「PDFの追加」でスキャンしたPDFをアップロード</li>
+<li>「見開き分割」で横長ページを左右に分割</li>
+<li>「ページ削除」で空白ページを削除</li>
+<li>「ページ編集」で向きが逆のページを回転</li>
+<li>「全体を保存」で完成したPDFをダウンロード</li>
 </ol>
+
+<h4>パターン2：複数の書類をまとめて分類</h4>
+<ol>
+<li>「PDFの追加」で複数のPDFをまとめてアップロード</li>
+<li>「ページ並べ替え」で順序を整理</li>
+<li>「ファイル分割保存」でページ範囲ごとに別ファイルとして保存</li>
+</ol>
+
+<h4>パターン3：個人情報を隠して共有</h4>
+<ol>
+<li>「PDFの追加」で書類をアップロード</li>
+<li>「マスキング」で個人情報部分を黒塗り</li>
+<li>「全体を保存」で黒塗りPDFをダウンロード</li>
+</ol>
+
+<h4>パターン4：フォント問題を解決</h4>
+<ol>
+<li>「PDFの追加」でPDFをアップロード</li>
+<li>「全体を保存」または「個別ページ保存」で「画像PDFとして保存」にチェック</li>
+<li>画質（DPI）を選択してダウンロード</li>
+</ol>
+<p>※ PDFを画像化することで、どの環境でも同じように表示されるようになります</p>
+
+<h3>⌨️ 便利なショートカット</h3>
+<ul>
+<li><strong>Ctrl+Z</strong>: 元に戻す（最大20回）</li>
+<li><strong>Ctrl+Y</strong>: やり直す</li>
+<li><strong>Ctrl+F5</strong> (Windows) / <strong>Cmd+Shift+R</strong> (Mac): ブラウザの完全リロード</li>
+</ul>
 <h2>サーバーの終了方法</h2>
 <p>サーバーを起動したターミナル/コマンドプロンプトで <code>Ctrl+C</code> を押すとサーバーが停止します。</p>
 <h2>技術仕様</h2>
@@ -170,6 +234,9 @@ py app.py
 <li><strong>PDF処理</strong>: PyMuPDF (サムネイル生成・ページ分割), pypdf (ページ操作)</li>
 <li><strong>フロントエンド</strong>: Vanilla JavaScript, CSS</li>
 </ul>
+<h2>ライセンス</h2>
+<p>MIT License</p>
+<p>&copy; 2025 IshiyamaYoshihiro</p>
 <h2>注意事項</h2>
 <ul>
 <li>このアプリは開発用サーバーで動作します。個人のPC上でローカルに使用することを想定しています。</li>
@@ -189,10 +256,66 @@ py app.py
 <li>ブラウザの開発者ツール（F12）のコンソールでエラーを確認</li>
 </ul>
 <h2>更新履歴</h2>
+<h3>2025-12-08</h3>
+<ul>
+<li><strong>ファイル分割UI改善</strong>: サムネイル間の縦線（分割線）のクリック判定を改善</li>
+<li>縦線の左右に30px（片側15px）のクリック可能領域を追加</li>
+<li>視覚的な見た目は変わらず、クリック判定だけを拡大</li>
+<li>縦線から少しズレた位置をクリックしても確実に反応するようになりました</li>
+</ul>
+<h3>2025-12-04</h3>
+<ul>
+<li><strong>マスキング座標計算の修正</strong>: マスキング機能で想定した場所と違う場所にマスキングされる問題を修正</li>
+<li>フロントエンド: キャンバスの表示サイズと内部解像度の比率を正しく計算するように改善</li>
+<li>バックエンド: ページコピーとマスキング描画の順序を修正し、マスキングが確実に反映されるように変更</li>
+<li>これにより、マウスで選択した領域に正確にマスキングが適用されるようになりました</li>
+</ul>
+<h3>2025-12-01</h3>
+<ul>
+<li><strong>ドラッグ＆ドロップ機能の追加</strong>: ファイルをドラッグ＆ドロップで簡単に追加可能に</li>
+<li>ファイル選択エリアの右側に専用の「ここにファイルをドラッグ＆ドロップ」エリアを設置</li>
+<li>ドラッグ中はエリアがハイライトされ、直感的に操作可能</li>
+</ul>
+<h3>2025-11-27</h3>
+<ul>
+<li><strong>ファイル分割機能の追加</strong>: PDFを任意の位置で複数のファイルに分割</li>
+<li>サムネイル間に縦線（分割線）を表示し、クリックで分割位置を指定</li>
+<li>ハサミマーク（✂）で分割位置を視覚的に表示</li>
+<li>モーダルダイアログで各パートのファイル名を個別に指定</li>
+<li>「保存不要」チェックボックスで不要なパートをスキップ可能</li>
+<li>ページ範囲（例：1～3ページ）を自動表示</li>
+<li>日本語ファイル名に完全対応（個別ダウンロード方式で文字化けを防止）</li>
+<li>使用例: 10ページのPDFを「前半.pdf」（1～3ページ）と「後半.pdf」（8～10ページ）に分割し、中間部分（4～7ページ）はスキップ</li>
+<li><strong>UIの大幅改善 - 階層化タブの実装</strong>: タブが増えて見にくくなった問題を解決</li>
+<li>2段階のタブ構造に変更（グループタブ + サブタブ）</li>
+<li>グループタブ: 「取り込み」「編集」「保存」の3つに分類</li>
+<li>グループをクリックすると下段に関連するサブタブが表示される</li>
+<li>タブ名をより分かりやすく変更:<ul>
+<li>「ファイル分割」→「ファイル分割保存」</li>
+<li>「個別ファイル保存」→「個別ページ保存」</li>
+<li>「PDFを保存」→「全体を保存」</li>
+</ul>
+</li>
+<li>画面幅が狭くてもタブが改行されず、すっきり表示</li>
+</ul>
+<h3>2025-11-14</h3>
+<ul>
+<li><strong>個別ファイル保存機能</strong>: PDFの各ページを個別のPDFファイルとして保存</li>
+<li>各ページが「ファイル名_1.pdf」「ファイル名_2.pdf」...として保存され、ZIPファイルでまとめてダウンロード</li>
+<li>画像PDF変換オプションを搭載（フォント問題の回避）</li>
+<li>画質選択機能: 96/150/200/300 DPIから選択可能</li>
+<li><strong>画像PDF変換機能</strong>: フォントが正しく表示されない問題を解決</li>
+<li>PDFを画像ベースのPDFに変換して保存</li>
+<li>「PDFを保存」タブに画像PDF変換オプションを追加</li>
+<li>すべてのページが画像として保存されるため、どの環境でも正しく表示される</li>
+<li><strong>タブ名の変更</strong>: より分かりやすい名称に変更</li>
+<li>「ページ分割」→「見開き分割」</li>
+<li>「ページ分割保存」→「個別ファイル保存」（新規追加機能）</li>
+</ul>
 <h3>2025-10-24</h3>
 <ul>
 <li><strong>GitHub管理を開始</strong>: 他アプリでGitHubを使う為にアカウントを作成したので、このアプリもバージョン管理を開始</li>
-<li>リポジトリURL: <a href="https://github.com/ishiyamayoshihiro-lgtm/pdf-page-editor" target="_blank">https://github.com/ishiyamayoshihiro-lgtm/pdf-page-editor</a></li>
+<li>リポジトリURL: https://github.com/ishiyamayoshihiro-lgtm/pdf-page-editor</li>
 <li>コードの変更履歴が記録され、いつでも過去のバージョンに戻せるようになりました</li>
 <li><code>.gitignore</code> ファイルを追加してログファイルや一時ファイルを除外</li>
 <li><code>CLAUDE.md</code> を追加: Claude Codeでの開発ガイドライン</li>
@@ -240,6 +363,5 @@ py app.py
 <li>サムネイルプレビュー表示</li>
 <li>Flask + PyMuPDF + pypdfによる実装</li>
 </ul>
-<p style="text-align: center; margin-top: 40px; color: #666; font-size: 0.9em;">(c) 2025 IshiyamaYoshihiro</p>
 </body>
 </html>

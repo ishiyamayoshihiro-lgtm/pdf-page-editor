@@ -1,10 +1,18 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+PDF編集Webアプリケーション
+(c) 2025 IshiyamaYoshihiro
+License: MIT License
+"""
 
 import os
-import uuid
 from flask import Flask, request, jsonify, render_template, send_from_directory
 import fitz  # PyMuPDF
 import pypdf
 import shutil
+import zipfile
+import io
 
 app = Flask(__name__)
 
@@ -15,6 +23,8 @@ OUTPUT_FOLDER = 'output'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['THUMBNAIL_FOLDER'] = THUMBNAIL_FOLDER
 app.config['OUTPUT_FOLDER'] = OUTPUT_FOLDER
+# ファイルサイズ制限（50MB）
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 
 # フォルダが存在しない場合は作成
 for folder in [UPLOAD_FOLDER, THUMBNAIL_FOLDER, OUTPUT_FOLDER]:
@@ -37,6 +47,7 @@ history_index = -1  # 現在の位置
 def _save_history():
     """現在のPDF状態を履歴に保存"""
     global history_stack, history_index
+
     original_pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded.pdf')
 
     if not os.path.exists(original_pdf_path):
@@ -56,7 +67,6 @@ def _save_history():
     history_path = os.path.join(HISTORY_FOLDER, history_filename)
     shutil.copy(original_pdf_path, history_path)
     history_stack.append(history_filename)
-
 
     # 履歴が多すぎる場合は古いものを削除（最大20個）
     if len(history_stack) > 20:
@@ -137,9 +147,11 @@ def index():
 def clear_all():
     """アップロードされたPDFとサムネイルをすべて削除する"""
     global original_filename, history_stack, history_index
+
     original_filename = None
     history_stack = []
     history_index = -1
+
     for folder in [app.config['UPLOAD_FOLDER'], app.config['THUMBNAIL_FOLDER'], HISTORY_FOLDER]:
         shutil.rmtree(folder, ignore_errors=True)
         os.makedirs(folder)
@@ -148,6 +160,7 @@ def clear_all():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     global original_filename
+
     if 'pdfFile' not in request.files:
         return jsonify({'error': 'ファイルがありません'}), 400
     file = request.files['pdfFile']
@@ -158,7 +171,7 @@ def upload_file():
         return jsonify({'error': '無効なファイル形式です'}), 400
 
     existing_pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded.pdf')
-    new_file_path = os.path.join(app.config['UPLOAD_FOLDER'], f'{uuid.uuid4()}.pdf')
+    new_file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'temp_upload.pdf')
     file.save(new_file_path)
 
     try:
@@ -182,7 +195,7 @@ def upload_file():
             writer.add_page(page)
 
         # 一時ファイルに書き出し
-        temp_write_path = os.path.join(app.config['UPLOAD_FOLDER'], f'{uuid.uuid4()}.pdf')
+        temp_write_path = os.path.join(app.config['UPLOAD_FOLDER'], 'temp_write.pdf')
         with open(temp_write_path, "wb") as f:
             writer.write(f)
 
@@ -375,6 +388,10 @@ def apply_mask():
             page = doc.load_page(page_num)
             rect = page.rect
 
+            # 新しいドキュメントにページをコピー
+            new_page = new_doc.new_page(width=rect.width, height=rect.height)
+            new_page.show_pdf_page(new_page.rect, doc, page_num)
+
             # ページ間隔とオフセットに基づいてマスキングを適用するかチェック
             # offset=1, interval=2: 1ページ目から2ページおき (0,2,4,6,...) → page_num % interval == 0
             # offset=2, interval=2: 2ページ目から2ページおき (1,3,5,7,...) → page_num % interval == 1
@@ -389,15 +406,11 @@ def apply_mask():
                     rect.height * (mask['y'] + mask['height'])
                 )
 
-                # 黒い矩形を描画
-                shape = page.new_shape()
+                # 新しいページに黒い矩形を描画
+                shape = new_page.new_shape()
                 shape.draw_rect(mask_rect)
                 shape.finish(color=(0, 0, 0), fill=(0, 0, 0))  # 黒塗り
                 shape.commit()
-
-            # 新しいドキュメントに追加
-            new_page = new_doc.new_page(width=rect.width, height=rect.height)
-            new_page.show_pdf_page(new_page.rect, doc, page_num)
 
         temp_filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded_temp.pdf')
         new_doc.save(temp_filepath, garbage=4, deflate=True, clean=True)
@@ -454,6 +467,7 @@ def undo():
 def redo():
     """一つ先の状態に進む"""
     global history_index
+
     if history_index >= len(history_stack) - 1:
         return jsonify({'error': 'これ以上進めません'}), 400
 
@@ -485,8 +499,230 @@ def history_status():
 @app.route('/get_original_filename', methods=['GET'])
 def get_original_filename():
     """最初にアップロードされたファイル名を返す"""
-    global original_filename
     return jsonify({'filename': original_filename or 'edited'})
+
+@app.route('/split_to_files', methods=['POST'])
+def split_to_files():
+    """各ページを個別のPDFファイルとして保存し、ZIPでダウンロード"""
+    original_pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded.pdf')
+
+    if not os.path.exists(original_pdf_path):
+        return jsonify({'error': 'PDFファイルがアップロードされていません'}), 400
+
+    data = request.get_json(silent=True) or {}
+    convert_to_image = data.get('convert_to_image', False)
+    dpi = data.get('dpi', 150)
+
+    try:
+        # ベースファイル名を取得
+        base_filename = original_filename or 'page'
+
+        # ZIPファイルをメモリ上に作成
+        zip_buffer = io.BytesIO()
+
+        if convert_to_image:
+            # 画像PDFとして保存
+            doc = fitz.open(original_pdf_path)
+            page_count = len(doc)
+
+            if page_count == 0:
+                return jsonify({'error': 'PDFにページがありません'}), 400
+
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                for page_index in range(page_count):
+                    page = doc.load_page(page_index)
+
+                    # ページを画像としてレンダリング
+                    pix = page.get_pixmap(dpi=dpi)
+                    img_bytes = pix.tobytes("png")
+
+                    # 新しいPDFドキュメントを作成
+                    new_doc = fitz.open()
+                    rect = page.rect
+                    new_page = new_doc.new_page(width=rect.width, height=rect.height)
+                    img_rect = fitz.Rect(0, 0, rect.width, rect.height)
+                    new_page.insert_image(img_rect, stream=img_bytes)
+
+                    # PDFをメモリに書き込み
+                    pdf_buffer = io.BytesIO()
+                    new_doc.save(pdf_buffer, garbage=4, deflate=True, clean=True)
+                    pdf_buffer.seek(0)
+
+                    # ZIPファイルに追加
+                    page_filename = f'{base_filename}_{page_index + 1}.pdf'
+                    zip_file.writestr(page_filename, pdf_buffer.read())
+
+                    new_doc.close()
+
+            doc.close()
+            message = f'{page_count}ページを画像PDFとして個別ファイルに分割しました（{dpi} DPI）'
+
+        else:
+            # 通常のPDFとして保存
+            reader = pypdf.PdfReader(original_pdf_path)
+            page_count = len(reader.pages)
+
+            if page_count == 0:
+                return jsonify({'error': 'PDFにページがありません'}), 400
+
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                for page_index in range(page_count):
+                    # 各ページ用の新しいPDFを作成
+                    writer = pypdf.PdfWriter()
+                    writer.add_page(reader.pages[page_index])
+
+                    # PDFをメモリ上に書き込み
+                    pdf_buffer = io.BytesIO()
+                    writer.write(pdf_buffer)
+                    pdf_buffer.seek(0)
+
+                    # ZIPファイルに追加
+                    page_filename = f'{base_filename}_{page_index + 1}.pdf'
+                    zip_file.writestr(page_filename, pdf_buffer.read())
+
+            message = f'{page_count}ページを個別のPDFファイルに分割しました'
+
+        # ZIPファイルを保存
+        zip_filename = f'{base_filename}_pages.zip'
+        zip_path = os.path.join(app.config['OUTPUT_FOLDER'], zip_filename)
+
+        with open(zip_path, 'wb') as f:
+            f.write(zip_buffer.getvalue())
+
+        return jsonify({
+            'message': message,
+            'download_url': f'/download/{zip_filename}',
+            'filename': zip_filename,
+            'page_count': page_count
+        })
+
+    except Exception as e:
+        return jsonify({'error': f'ページ分割中にエラーが発生しました: {str(e)}'}), 500
+
+@app.route('/convert_to_image_pdf', methods=['POST'])
+def convert_to_image_pdf():
+    """PDFを画像ベースのPDFに変換（フォント問題を回避）"""
+    original_pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded.pdf')
+
+    if not os.path.exists(original_pdf_path):
+        return jsonify({'error': 'PDFファイルがアップロードされていません'}), 400
+
+    data = request.get_json(silent=True) or {}
+    dpi = data.get('dpi', 150)  # デフォルトは150 DPI
+    custom_filename = data.get('filename', original_filename or 'image_pdf')
+
+    try:
+        # 元のPDFを開く
+        doc = fitz.open(original_pdf_path)
+        page_count = len(doc)
+
+        if page_count == 0:
+            return jsonify({'error': 'PDFにページがありません'}), 400
+
+        # 新しいPDFドキュメントを作成
+        new_doc = fitz.open()
+
+        for page_num in range(page_count):
+            page = doc.load_page(page_num)
+
+            # ページを指定されたDPIで画像としてレンダリング
+            pix = page.get_pixmap(dpi=dpi)
+
+            # 画像をPNGバイトとして取得
+            img_bytes = pix.tobytes("png")
+
+            # 新しいPDFページを作成（元のページサイズと同じ）
+            rect = page.rect
+            new_page = new_doc.new_page(width=rect.width, height=rect.height)
+
+            # 画像を新しいページに挿入
+            img_rect = fitz.Rect(0, 0, rect.width, rect.height)
+            new_page.insert_image(img_rect, stream=img_bytes)
+
+        # 出力ファイル名を準備
+        if custom_filename.lower().endswith('.pdf'):
+            custom_filename = custom_filename[:-4]
+        output_filename = f'{custom_filename}_image.pdf'
+        output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
+
+        # 新しいPDFを保存
+        new_doc.save(output_path, garbage=4, deflate=True, clean=True)
+
+        doc.close()
+        new_doc.close()
+
+        return jsonify({
+            'message': f'{page_count}ページを画像PDFに変換しました（{dpi} DPI）',
+            'download_url': f'/download/{output_filename}',
+            'filename': output_filename,
+            'page_count': page_count
+        })
+
+    except Exception as e:
+        return jsonify({'error': f'画像PDF変換中にエラーが発生しました: {str(e)}'}), 500
+
+@app.route('/split_and_save', methods=['POST'])
+def split_and_save():
+    """分割線で区切られた各パートに名前を付けて保存"""
+    global original_filename
+
+    original_pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded.pdf')
+    if not os.path.exists(original_pdf_path):
+        return jsonify({'error': 'PDFファイルがアップロードされていません'}), 400
+
+    data = request.get_json()
+    if not data or 'parts' not in data:
+        return jsonify({'error': 'パート情報が指定されていません'}), 400
+
+    parts = data['parts']  # [{'filename': 'xxx', 'save': True, 'start': 0, 'end': 3}, ...]
+
+    try:
+        reader = pypdf.PdfReader(original_pdf_path)
+
+        # 保存するパートをフィルタリング
+        parts_to_save = [p for p in parts if p.get('save', True)]
+
+        if not parts_to_save:
+            return jsonify({'error': '保存するパートが選択されていません'}), 400
+
+        # 各パートのPDFファイルを個別に保存
+        download_urls = []
+
+        for part in parts_to_save:
+            filename = part.get('filename', '').strip()
+            if not filename:
+                continue
+
+            start_page = int(part['start'])
+            end_page = int(part['end'])
+
+            # パートのPDFを作成
+            writer = pypdf.PdfWriter()
+            for page_index in range(start_page, end_page):
+                if page_index < len(reader.pages):
+                    writer.add_page(reader.pages[page_index])
+
+            # .pdfがない場合は追加
+            if not filename.lower().endswith('.pdf'):
+                filename += '.pdf'
+
+            # PDFファイルを保存
+            output_path = os.path.join(app.config['OUTPUT_FOLDER'], filename)
+            with open(output_path, 'wb') as f:
+                writer.write(f)
+
+            download_urls.append({
+                'url': f'/download/{filename}',
+                'filename': filename
+            })
+
+        return jsonify({
+            'message': f'{len(parts_to_save)}個のファイルに分割しました',
+            'files': download_urls
+        })
+
+    except Exception as e:
+        return jsonify({'error': f'ファイル分割中にエラーが発生しました: {str(e)}'}), 500
 
 @app.route('/thumbnails/<path:filename>')
 def serve_thumbnail(filename):
@@ -497,9 +733,14 @@ def serve_output(filename):
     return send_from_directory(app.config['OUTPUT_FOLDER'], filename, as_attachment=True)
 
 if __name__ == '__main__':
-    logger.info("=" * 60)
-    logger.info("アプリケーションを起動しています...")
-    logger.info(f"ログファイル: {log_filename}")
-    logger.info("Webブラウザで http://127.0.0.1:5000 を開いてください")
-    logger.info("=" * 60)
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    import os
+    # 環境変数で本番環境かどうかを判定（PythonAnywhereではFLASK_ENV=productionを設定）
+    is_production = os.environ.get('FLASK_ENV') == 'production'
+
+    if not is_production:
+        print("=" * 60)
+        print("アプリケーションを起動しています...")
+        print("Webブラウザで http://127.0.0.1:5000 を開いてください")
+        print("=" * 60)
+
+    app.run(host='127.0.0.1', port=5000, debug=not is_production)
