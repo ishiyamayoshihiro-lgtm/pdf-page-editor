@@ -6,6 +6,66 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // ========================================
+    // 更新チェック
+    // ========================================
+    checkForUpdates();
+
+    async function checkForUpdates() {
+        try {
+            const response = await fetch('/check_update');
+            const data = await response.json();
+
+            if (data.update_available) {
+                showUpdateBanner(data.current_version, data.latest_version, data.release_notes);
+            }
+        } catch (error) {
+            // 更新チェックに失敗してもアプリは動作させる
+            console.log('更新チェックをスキップしました:', error);
+        }
+    }
+
+    function showUpdateBanner(currentVersion, latestVersion, releaseNotes) {
+        const banner = document.getElementById('update-banner');
+        const message = document.getElementById('update-message');
+        const updateBtn = document.getElementById('update-button');
+        const dismissBtn = document.getElementById('dismiss-update');
+
+        if (!banner) return;
+
+        message.textContent = `新しいバージョン ${latestVersion} が利用可能です（現在: ${currentVersion}）`;
+        banner.style.display = 'flex';
+
+        updateBtn.onclick = async () => {
+            updateBtn.disabled = true;
+            updateBtn.textContent = '更新中...';
+
+            try {
+                const response = await fetch('/perform_update', { method: 'POST' });
+                const result = await response.json();
+
+                if (result.success) {
+                    message.textContent = '更新完了！ページを再読み込みしてください。';
+                    updateBtn.textContent = '再読み込み';
+                    updateBtn.disabled = false;
+                    updateBtn.onclick = () => location.reload();
+                } else {
+                    message.textContent = '更新に失敗しました: ' + result.message;
+                    updateBtn.textContent = '再試行';
+                    updateBtn.disabled = false;
+                }
+            } catch (error) {
+                message.textContent = '更新中にエラーが発生しました';
+                updateBtn.textContent = '再試行';
+                updateBtn.disabled = false;
+            }
+        };
+
+        dismissBtn.onclick = () => {
+            banner.style.display = 'none';
+        };
+    }
+
+    // ========================================
     // グローバル変数・定数
     // ========================================
     let sharedPdfData = null;
@@ -17,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reorder: false,
         'file-split': false,
         mask: false,
+        symbol: false,
         'split-files': false,
         save: false
     };
@@ -69,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const galleryEdit = document.getElementById('gallery-edit');
     const rotateLeftButton = document.getElementById('rotate-left-button');
     const rotateRightButton = document.getElementById('rotate-right-button');
+    const rotate180Button = document.getElementById('rotate-180-button');
     const clearSelectionButtonEdit = document.getElementById('clear-selection-button-edit');
     const swapOddEvenButton = document.getElementById('swap-odd-even-button');
     const reverseAllButton = document.getElementById('reverse-all-button');
@@ -104,6 +166,27 @@ document.addEventListener('DOMContentLoaded', () => {
     let maskSelectionBox = null; // DOM要素
     let currentMaskPageIndex = 0; // 現在選択中のページインデックス
 
+    // --- シンボルマーク追加タブ要素 ---
+    const gallerySymbol = document.getElementById('gallery-symbol');
+    const applySymbolButton = document.getElementById('apply-symbol-button');
+    const previewSymbolButton = document.getElementById('preview-symbol-button');
+    const sizeSliderSymbol = document.getElementById('size-slider-symbol');
+    const symbolSizeSlider = document.getElementById('symbol-size-slider');
+    const symbolSizeValue = document.getElementById('symbol-size-value');
+    const symbolCorners = ['topleft', 'topright', 'bottomleft', 'bottomright'];
+    const symbolSelects = {};
+    const symbolXSliders = {};
+    const symbolYSliders = {};
+    const symbolXValues = {};
+    const symbolYValues = {};
+    symbolCorners.forEach(corner => {
+        symbolSelects[corner] = document.getElementById(`symbol-select-${corner}`);
+        symbolXSliders[corner] = document.getElementById(`symbol-x-${corner}`);
+        symbolYSliders[corner] = document.getElementById(`symbol-y-${corner}`);
+        symbolXValues[corner] = document.getElementById(`symbol-x-value-${corner}`);
+        symbolYValues[corner] = document.getElementById(`symbol-y-value-${corner}`);
+    });
+
     // --- ページ分割保存タブ要素 ---
     const gallerySplitFiles = document.getElementById('gallery-split-files');
     const splitToFilesButton = document.getElementById('split-to-files-button');
@@ -117,6 +200,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const savePdfButton = document.getElementById('save-pdf-button');
     const saveImagePdfButton = document.getElementById('save-image-pdf-button');
     const imagePdfDpiSelect = document.getElementById('image-pdf-dpi-select');
+    const saveGrayscalePdfButton = document.getElementById('save-grayscale-pdf-button');
+    const saveGrayscaleImagePdfButton = document.getElementById('save-grayscale-image-pdf-button');
+    const grayscaleImagePdfDpiSelect = document.getElementById('grayscale-image-pdf-dpi-select');
     const sizeSliderSave = document.getElementById('size-slider-save');
 
     // --- モーダル要素 ---
@@ -207,8 +293,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const subTabGroups = document.querySelectorAll('.sub-tab-group');
 
     groupTabButtons.forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', async () => {
             const targetGroup = button.dataset.group;
+            // 並べ替えタブから離れる場合、変更があればバックエンドに保存
+            const currentActiveTab = document.querySelector('.tab-content.active');
+            if (currentActiveTab && currentActiveTab.id === 'reorder-tab') {
+                await saveReorderChanges();
+            }
             groupTabButtons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
             subTabGroups.forEach(group => {
@@ -227,8 +318,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // サブタブの切り替え
     tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', async () => {
             const targetTab = button.dataset.tab;
+            // 並べ替えタブから離れる場合、変更があればバックエンドに保存
+            const currentActiveTab = document.querySelector('.tab-content.active');
+            if (currentActiveTab && currentActiveTab.id === 'reorder-tab' && targetTab !== 'reorder') {
+                await saveReorderChanges();
+            }
             const parentGroup = button.closest('.sub-tab-group');
             if (parentGroup) {
                 parentGroup.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
@@ -299,9 +395,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    [sizeSliderSplit, sizeSliderDelete, sizeSliderEdit, sizeSliderReorder, sizeSliderFileSplit, sizeSliderSplitFiles, sizeSliderSave].forEach(slider => {
+    [sizeSliderSplit, sizeSliderDelete, sizeSliderEdit, sizeSliderReorder, sizeSliderFileSplit, sizeSliderSymbol, sizeSliderSplitFiles, sizeSliderSave].forEach(slider => {
         slider.addEventListener('input', (e) => {
             document.documentElement.style.setProperty('--thumbnail-width', `${e.target.value}px`);
+        });
+    });
+
+    // シンボルサイズスライダーのイベント
+    symbolSizeSlider.addEventListener('input', (e) => {
+        symbolSizeValue.textContent = e.target.value;
+    });
+
+    // シンボル位置スライダーのイベント
+    symbolCorners.forEach(corner => {
+        symbolXSliders[corner].addEventListener('input', (e) => {
+            symbolXValues[corner].textContent = e.target.value;
+        });
+        symbolYSliders[corner].addEventListener('input', (e) => {
+            symbolYValues[corner].textContent = e.target.value;
         });
     });
 
@@ -402,6 +513,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function clearMaskSelection() {
         maskSelection = null;
+        // リサイズハンドルを削除
+        document.querySelectorAll('.mask-resize-handle').forEach(h => h.remove());
         if (maskSelectionBox) {
             maskSelectionBox.remove();
             maskSelectionBox = null;
@@ -478,6 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'reorder-tab': populateGalleryReorder(order); break;
             case 'file-split-tab': populateGalleryFileSplit(order); break;
             case 'mask-tab': populateGalleryMask(order); break;
+            case 'symbol-tab': populateGallerySymbol(order); break;
             case 'split-files-tab': populateGallerySplitFiles(order); break;
             case 'save-tab': populateGallerySave(order); break;
         }
@@ -485,7 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function forceRepopulateAllGalleries() {
         Object.keys(galleriesPopulated).forEach(key => galleriesPopulated[key] = false);
-        [galleryUpload, gallerySplit, galleryDelete, galleryEdit, galleryReorder, galleryFileSplit, galleryMask, gallerySplitFiles, gallerySave].forEach(g => { g.innerHTML = ''; });
+        [galleryUpload, gallerySplit, galleryDelete, galleryEdit, galleryReorder, galleryFileSplit, galleryMask, gallerySymbol, gallerySplitFiles, gallerySave].forEach(g => { g.innerHTML = ''; });
         if (sharedPdfData) {
             const orderToRender = Array.from({ length: sharedPdfData.page_count }, (_, i) => i);
             populateGalleries(orderToRender);
@@ -521,9 +635,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const buttons = [
             splitSelectedButton, splitAllButton, clearSelectionButtonSplit,
             deleteButton, clearSelectionButtonDelete, rotateLeftButton,
-            rotateRightButton, clearSelectionButtonEdit, swapOddEvenButton,
+            rotateRightButton, rotate180Button, clearSelectionButtonEdit, swapOddEvenButton,
             reverseAllButton, applyOrderButton, clearSelectionButton,
-            splitToFilesButton, savePdfButton, saveImagePdfButton
+            applySymbolButton, previewSymbolButton,
+            splitToFilesButton, savePdfButton, saveImagePdfButton,
+            saveGrayscalePdfButton, saveGrayscaleImagePdfButton
         ];
         buttons.forEach(btn => btn.disabled = !enabled);
         movePrevButton.disabled = true;
@@ -646,6 +762,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function populateGallerySymbol(pageOrder) {
+        gallerySymbol.innerHTML = '';
+        pageOrder.forEach((originalIndex) => {
+            gallerySymbol.appendChild(createPageContainer(originalIndex, sharedPdfData.thumbnails[originalIndex]));
+        });
+    }
+
     function populateGalleryFileSplit(pageOrder) {
         galleryFileSplit.innerHTML = '';
         pageOrder.forEach((originalIndex, index) => {
@@ -750,6 +873,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     rotateLeftButton.addEventListener('click', () => rotatePages(-90));
     rotateRightButton.addEventListener('click', () => rotatePages(90));
+    rotate180Button.addEventListener('click', () => rotatePages(180));
     async function rotatePages(rotation) {
         if (selectedPagesToEdit.length === 0) { return; }
         await performManipulation('/rotate', `${selectedPagesToEdit.length}ページを回転中...`, { 
@@ -882,12 +1006,33 @@ document.addEventListener('DOMContentLoaded', () => {
         updateGalleryOverlays();
         updateReorderButtonsState();
     });
-    applyOrderButton.addEventListener('click', () => {
-        if (clickedOrder.length === 0) return;
-        const currentOrder = Array.from(galleryReorder.children).map(c => parseInt(c.dataset.originalIndex, 10));
-        const remainingPages = currentOrder.filter(index => !clickedOrder.includes(index));
-        const newPageOrder = clickedOrder.concat(remainingPages);
-        populateGalleryReorder(newPageOrder);
+    applyOrderButton.addEventListener('click', async () => {
+        // クリック順で並べ替えがある場合はそれを使用、なければDOMの現在の順序を使用
+        let newPageOrder;
+        if (clickedOrder.length > 0) {
+            const currentOrder = Array.from(galleryReorder.children).map(c => parseInt(c.dataset.originalIndex, 10));
+            const remainingPages = currentOrder.filter(index => !clickedOrder.includes(index));
+            newPageOrder = clickedOrder.concat(remainingPages);
+        } else {
+            // DOMの現在の順序を取得（前へ/次へボタンで移動した場合）
+            newPageOrder = Array.from(galleryReorder.children).map(c => parseInt(c.dataset.originalIndex, 10));
+        }
+
+        // 元の順序と同じかチェック
+        const originalOrder = Array.from({ length: sharedPdfData.page_count }, (_, i) => i);
+        const isSameOrder = newPageOrder.length === originalOrder.length &&
+            newPageOrder.every((val, idx) => val === originalOrder[idx]);
+        if (isSameOrder) {
+            status.textContent = '並べ替えの変更がありません。';
+            return;
+        }
+
+        // バックエンドに新しい順序を送信
+        await performManipulation('/apply_reorder', 'ページを並べ替え中...', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order: newPageOrder })
+        });
         clickedOrder = [];
         selectedPagesToMove = [];
     });
@@ -900,13 +1045,52 @@ document.addEventListener('DOMContentLoaded', () => {
         if (direction === 'prev') {
             const firstSelected = selectedSorted[0];
             const targetNode = firstSelected.previousElementSibling;
-            if (targetNode) selectedSorted.forEach(page => galleryReorder.insertBefore(page, targetNode));
+            if (!targetNode) return;
+            selectedSorted.forEach(page => galleryReorder.insertBefore(page, targetNode));
         } else {
             const lastSelected = selectedSorted[selectedSorted.length - 1];
             const targetNode = lastSelected.nextElementSibling;
-            if (targetNode) selectedSorted.reverse().forEach(page => galleryReorder.insertBefore(page, targetNode.nextElementSibling));
+            if (!targetNode) return;
+            selectedSorted.reverse().forEach(page => galleryReorder.insertBefore(page, targetNode.nextElementSibling));
         }
         updateReorderButtonsState();
+    }
+
+    // 並べ替えタブの変更をバックエンドに保存する関数
+    async function saveReorderChanges() {
+        if (!sharedPdfData || galleryReorder.children.length === 0) return false;
+        const currentOrder = Array.from(galleryReorder.children).map(c => parseInt(c.dataset.originalIndex, 10));
+        const originalOrder = Array.from({ length: sharedPdfData.page_count }, (_, i) => i);
+        const hasChanges = !currentOrder.every((val, idx) => val === originalOrder[idx]);
+        if (!hasChanges) return false;
+
+        status.textContent = 'ページ順序を保存中...';
+        try {
+            const response = await fetch('/apply_reorder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order: currentOrder })
+            });
+            const data = await response.json();
+            if (!response.ok) { throw new Error(data.error || 'サーバーエラー'); }
+            sharedPdfData = { page_count: data.page_count, thumbnails: data.thumbnails };
+            // 並べ替えタブ以外のギャラリーをリセット
+            Object.keys(galleriesPopulated).forEach(key => {
+                if (key !== 'reorder') galleriesPopulated[key] = false;
+            });
+            [galleryUpload, gallerySplit, galleryDelete, galleryEdit, galleryFileSplit, galleryMask, gallerySymbol, gallerySplitFiles, gallerySave].forEach(g => { g.innerHTML = ''; });
+            // 並べ替えタブのoriginalIndexを更新（新しい順序に合わせる）
+            Array.from(galleryReorder.children).forEach((container, idx) => {
+                container.dataset.originalIndex = idx;
+                container.querySelector('.page-number').textContent = `ページ ${idx + 1}`;
+            });
+            status.textContent = data.message;
+            await updateHistoryButtons();
+            return true;
+        } catch (error) {
+            status.textContent = `エラー: ${error.message}`;
+            return false;
+        }
     }
 
     splitToFilesButton.addEventListener('click', async () => {
@@ -1018,6 +1202,65 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    saveGrayscalePdfButton.addEventListener('click', async () => {
+        if (!sharedPdfData || sharedPdfData.page_count === 0) { status.textContent = 'PDFがアップロードされていません。'; return; }
+        try {
+            const filenameResponse = await fetch('/get_original_filename');
+            const filenameData = await filenameResponse.json();
+            const baseFilename = filenameData.filename || 'grayscale';
+            status.textContent = 'PDFを白黒PDFに変換中...';
+            saveGrayscalePdfButton.disabled = true;
+            const response = await fetch('/convert_to_grayscale', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename: baseFilename })
+            });
+            const data = await response.json();
+            if (!response.ok) { throw new Error(data.error || 'サーバーエラー'); }
+            const link = document.createElement('a');
+            link.href = data.download_url;
+            link.download = data.filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            status.textContent = data.message;
+        } catch (error) {
+            status.textContent = `エラー: ${error.message}`;
+        } finally {
+            saveGrayscalePdfButton.disabled = false;
+        }
+    });
+
+    saveGrayscaleImagePdfButton.addEventListener('click', async () => {
+        if (!sharedPdfData || sharedPdfData.page_count === 0) { status.textContent = 'PDFがアップロードされていません。'; return; }
+        try {
+            const filenameResponse = await fetch('/get_original_filename');
+            const filenameData = await filenameResponse.json();
+            const baseFilename = filenameData.filename || 'grayscale_image';
+            const dpi = parseInt(grayscaleImagePdfDpiSelect.value, 10);
+            status.textContent = `PDFを白黒画像PDFに変換中（${dpi} DPI）...`;
+            saveGrayscaleImagePdfButton.disabled = true;
+            const response = await fetch('/convert_to_grayscale_image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename: baseFilename, dpi: dpi })
+            });
+            const data = await response.json();
+            if (!response.ok) { throw new Error(data.error || 'サーバーエラー'); }
+            const link = document.createElement('a');
+            link.href = data.download_url;
+            link.download = data.filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            status.textContent = data.message;
+        } catch (error) {
+            status.textContent = `エラー: ${error.message}`;
+        } finally {
+            saveGrayscaleImagePdfButton.disabled = false;
+        }
+    });
+
     // ========================================
     // ヘルパー関数
     // ========================================
@@ -1054,55 +1297,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isDrawing = false;
     let startX, startY;
+    let isResizing = false;
+    let resizeHandle = null;
+    let resizeStartX, resizeStartY;
+    let resizeStartBox = null; // {x, y, width, height} キャンバス座標
 
-    maskCanvas.addEventListener('mousedown', (e) => {
-        if (!sharedPdfData) return;
-        isDrawing = true;
+    // 座標をキャンバス範囲内にクランプする関数
+    function clampToCanvas(x, y) {
+        return {
+            x: Math.max(0, Math.min(x, maskCanvas.width)),
+            y: Math.max(0, Math.min(y, maskCanvas.height))
+        };
+    }
+
+    // マウス座標をキャンバス座標に変換（クランプ付き）
+    function getCanvasCoords(e) {
         const rect = maskCanvas.getBoundingClientRect();
-        // キャンバスのスケール比を考慮して座標を計算
         const scaleX = maskCanvas.width / rect.width;
         const scaleY = maskCanvas.height / rect.height;
-        startX = (e.clientX - rect.left) * scaleX;
-        startY = (e.clientY - rect.top) * scaleY;
-        if (maskSelectionBox) maskSelectionBox.remove();
-    });
+        const rawX = (e.clientX - rect.left) * scaleX;
+        const rawY = (e.clientY - rect.top) * scaleY;
+        return clampToCanvas(rawX, rawY);
+    }
 
-    maskCanvas.addEventListener('mousemove', (e) => {
-        if (!isDrawing) return;
-        const rect = maskCanvas.getBoundingClientRect();
-        const scaleX = maskCanvas.width / rect.width;
-        const scaleY = maskCanvas.height / rect.height;
-        const currentX = (e.clientX - rect.left) * scaleX;
-        const currentY = (e.clientY - rect.top) * scaleY;
-        const x = Math.min(startX, currentX);
-        const y = Math.min(startY, currentY);
-        const width = Math.abs(currentX - startX);
-        const height = Math.abs(currentY - startY);
+    // 選択ボックスの位置とサイズを更新
+    function updateSelectionBox(x, y, width, height) {
         if (!maskSelectionBox) {
             maskSelectionBox = document.createElement('div');
             maskSelectionBox.className = 'mask-selection-box';
             maskCanvasContainer.appendChild(maskSelectionBox);
         }
-        // 表示用の座標はスケールを逆変換
+        const rect = maskCanvas.getBoundingClientRect();
+        const scaleX = maskCanvas.width / rect.width;
+        const scaleY = maskCanvas.height / rect.height;
         maskSelectionBox.style.left = (x / scaleX) + 'px';
         maskSelectionBox.style.top = (y / scaleY) + 'px';
         maskSelectionBox.style.width = (width / scaleX) + 'px';
         maskSelectionBox.style.height = (height / scaleY) + 'px';
-    });
+    }
 
-    maskCanvas.addEventListener('mouseup', (e) => {
-        if (!isDrawing) return;
-        isDrawing = false;
-        const rect = maskCanvas.getBoundingClientRect();
-        const scaleX = maskCanvas.width / rect.width;
-        const scaleY = maskCanvas.height / rect.height;
-        const endX = (e.clientX - rect.left) * scaleX;
-        const endY = (e.clientY - rect.top) * scaleY;
-        const x = Math.min(startX, endX);
-        const y = Math.min(startY, endY);
-        const width = Math.abs(endX - startX);
-        const height = Math.abs(endY - startY);
-        // 正規化された座標(0-1)に変換
+    // リサイズハンドルを作成
+    function createResizeHandles() {
+        // 既存のハンドルを削除
+        document.querySelectorAll('.mask-resize-handle').forEach(h => h.remove());
+        if (!maskSelectionBox) return;
+
+        const handles = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+        handles.forEach(pos => {
+            const handle = document.createElement('div');
+            handle.className = 'mask-resize-handle mask-resize-' + pos;
+            handle.dataset.handle = pos;
+            maskSelectionBox.appendChild(handle);
+        });
+    }
+
+    // 選択を確定し、maskSelectionを更新
+    function finalizeSelection(x, y, width, height) {
+        // 最小サイズチェック
+        if (width < 5 || height < 5) {
+            clearMaskSelection();
+            return;
+        }
         maskSelection = {
             x: x / maskCanvas.width,
             y: y / maskCanvas.height,
@@ -1112,6 +1367,129 @@ document.addEventListener('DOMContentLoaded', () => {
         maskInfo.textContent = `選択領域: (${Math.round(x)}, ${Math.round(y)}) - ${Math.round(width)} × ${Math.round(height)}px`;
         applyMaskButton.disabled = false;
         clearMaskButton.disabled = false;
+        createResizeHandles();
+    }
+
+    maskCanvas.addEventListener('mousedown', (e) => {
+        if (!sharedPdfData) return;
+        // リサイズハンドル上でのクリックは無視（ハンドル側で処理）
+        if (e.target.classList.contains('mask-resize-handle')) return;
+
+        isDrawing = true;
+        const coords = getCanvasCoords(e);
+        startX = coords.x;
+        startY = coords.y;
+        // 既存の選択ボックスとハンドルを削除
+        document.querySelectorAll('.mask-resize-handle').forEach(h => h.remove());
+        if (maskSelectionBox) maskSelectionBox.remove();
+        maskSelectionBox = null;
+    });
+
+    // ドキュメントレベルでmousemoveを監視（キャンバス外でも追跡可能に）
+    document.addEventListener('mousemove', (e) => {
+        // リサイズ中の処理
+        if (isResizing && resizeHandle && resizeStartBox) {
+            const coords = getCanvasCoords(e);
+            const deltaX = coords.x - resizeStartX;
+            const deltaY = coords.y - resizeStartY;
+
+            let newX = resizeStartBox.x;
+            let newY = resizeStartBox.y;
+            let newWidth = resizeStartBox.width;
+            let newHeight = resizeStartBox.height;
+
+            const handlePos = resizeHandle.dataset.handle;
+
+            // ハンドル位置に応じて新しい座標を計算
+            if (handlePos.includes('w')) {
+                newX = Math.min(resizeStartBox.x + resizeStartBox.width - 5, resizeStartBox.x + deltaX);
+                newWidth = resizeStartBox.width - (newX - resizeStartBox.x);
+            }
+            if (handlePos.includes('e')) {
+                newWidth = Math.max(5, resizeStartBox.width + deltaX);
+            }
+            if (handlePos.includes('n')) {
+                newY = Math.min(resizeStartBox.y + resizeStartBox.height - 5, resizeStartBox.y + deltaY);
+                newHeight = resizeStartBox.height - (newY - resizeStartBox.y);
+            }
+            if (handlePos.includes('s')) {
+                newHeight = Math.max(5, resizeStartBox.height + deltaY);
+            }
+
+            // キャンバス範囲内にクランプ
+            if (newX < 0) { newWidth += newX; newX = 0; }
+            if (newY < 0) { newHeight += newY; newY = 0; }
+            if (newX + newWidth > maskCanvas.width) newWidth = maskCanvas.width - newX;
+            if (newY + newHeight > maskCanvas.height) newHeight = maskCanvas.height - newY;
+
+            updateSelectionBox(newX, newY, newWidth, newHeight);
+            maskInfo.textContent = `選択領域: (${Math.round(newX)}, ${Math.round(newY)}) - ${Math.round(newWidth)} × ${Math.round(newHeight)}px`;
+            return;
+        }
+
+        // 新規選択中の処理
+        if (!isDrawing) return;
+        const coords = getCanvasCoords(e);
+        const x = Math.min(startX, coords.x);
+        const y = Math.min(startY, coords.y);
+        const width = Math.abs(coords.x - startX);
+        const height = Math.abs(coords.y - startY);
+        updateSelectionBox(x, y, width, height);
+    });
+
+    // ドキュメントレベルでmouseupを監視
+    document.addEventListener('mouseup', (e) => {
+        // リサイズ終了
+        if (isResizing) {
+            isResizing = false;
+            if (maskSelectionBox) {
+                const rect = maskCanvas.getBoundingClientRect();
+                const scaleX = maskCanvas.width / rect.width;
+                const scaleY = maskCanvas.height / rect.height;
+                const boxLeft = parseFloat(maskSelectionBox.style.left) * scaleX;
+                const boxTop = parseFloat(maskSelectionBox.style.top) * scaleY;
+                const boxWidth = parseFloat(maskSelectionBox.style.width) * scaleX;
+                const boxHeight = parseFloat(maskSelectionBox.style.height) * scaleY;
+                finalizeSelection(boxLeft, boxTop, boxWidth, boxHeight);
+            }
+            resizeHandle = null;
+            resizeStartBox = null;
+            return;
+        }
+
+        // 新規選択終了
+        if (!isDrawing) return;
+        isDrawing = false;
+        const coords = getCanvasCoords(e);
+        const x = Math.min(startX, coords.x);
+        const y = Math.min(startY, coords.y);
+        const width = Math.abs(coords.x - startX);
+        const height = Math.abs(coords.y - startY);
+        finalizeSelection(x, y, width, height);
+    });
+
+    // リサイズハンドルのイベント（イベント委譲）
+    maskCanvasContainer.addEventListener('mousedown', (e) => {
+        if (!e.target.classList.contains('mask-resize-handle')) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        isResizing = true;
+        resizeHandle = e.target;
+        const coords = getCanvasCoords(e);
+        resizeStartX = coords.x;
+        resizeStartY = coords.y;
+
+        // 現在の選択ボックスの位置とサイズを保存
+        const rect = maskCanvas.getBoundingClientRect();
+        const scaleX = maskCanvas.width / rect.width;
+        const scaleY = maskCanvas.height / rect.height;
+        resizeStartBox = {
+            x: parseFloat(maskSelectionBox.style.left) * scaleX,
+            y: parseFloat(maskSelectionBox.style.top) * scaleY,
+            width: parseFloat(maskSelectionBox.style.width) * scaleX,
+            height: parseFloat(maskSelectionBox.style.height) * scaleY
+        };
     });
 
     clearMaskButton.addEventListener('click', () => {
@@ -1145,6 +1523,100 @@ document.addEventListener('DOMContentLoaded', () => {
             status.textContent = `エラー: ${error.message}`;
             applyMaskButton.disabled = false;
             clearMaskButton.disabled = false;
+        }
+    });
+
+    // ========================================
+    // シンボルマーク追加機能
+    // ========================================
+
+    function getSymbolSettings() {
+        const symbols = {};
+        symbolCorners.forEach(corner => {
+            const symbol = symbolSelects[corner].value;
+            if (symbol) {
+                symbols[corner] = {
+                    symbol: symbol,
+                    x: parseInt(symbolXSliders[corner].value, 10),
+                    y: parseInt(symbolYSliders[corner].value, 10)
+                };
+            }
+        });
+        return {
+            symbols: symbols,
+            size: parseInt(symbolSizeSlider.value, 10)
+        };
+    }
+
+    applySymbolButton.addEventListener('click', async () => {
+        const settings = getSymbolSettings();
+        if (Object.keys(settings.symbols).length === 0) {
+            status.textContent = '少なくとも1つのシンボルを選択してください。';
+            return;
+        }
+
+        status.textContent = 'シンボルマークを追加中...';
+        applySymbolButton.disabled = true;
+        previewSymbolButton.disabled = true;
+
+        try {
+            const response = await fetch('/apply_symbols', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            });
+            const data = await response.json();
+            if (!response.ok) { throw new Error(data.error || 'サーバーエラー'); }
+            sharedPdfData = { page_count: data.page_count, thumbnails: data.thumbnails };
+            forceRepopulateAllGalleries();
+            status.textContent = data.message;
+            await updateHistoryButtons();
+        } catch (error) {
+            status.textContent = `エラー: ${error.message}`;
+        } finally {
+            applySymbolButton.disabled = false;
+            previewSymbolButton.disabled = false;
+        }
+    });
+
+    previewSymbolButton.addEventListener('click', async () => {
+        const settings = getSymbolSettings();
+        if (Object.keys(settings.symbols).length === 0) {
+            status.textContent = '少なくとも1つのシンボルを選択してください。';
+            return;
+        }
+
+        status.textContent = 'プレビューを生成中...';
+        previewSymbolButton.disabled = true;
+
+        try {
+            const response = await fetch('/preview_symbols', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            });
+            const data = await response.json();
+            if (!response.ok) { throw new Error(data.error || 'サーバーエラー'); }
+
+            // プレビュー用のサムネイルを一時的に表示
+            gallerySymbol.innerHTML = '';
+            data.preview_thumbnails.forEach((thumbUrl, index) => {
+                const pageContainer = document.createElement('div');
+                pageContainer.className = 'page-container';
+                const img = document.createElement('img');
+                img.src = thumbUrl + '?t=' + new Date().getTime();
+                const pageNum = document.createElement('div');
+                pageNum.className = 'page-number';
+                pageNum.textContent = `ページ ${index + 1} (プレビュー)`;
+                pageContainer.appendChild(img);
+                pageContainer.appendChild(pageNum);
+                gallerySymbol.appendChild(pageContainer);
+            });
+            status.textContent = 'プレビューを表示中（適用するには「シンボルマークを追加」ボタンをクリック）';
+        } catch (error) {
+            status.textContent = `エラー: ${error.message}`;
+        } finally {
+            previewSymbolButton.disabled = false;
         }
     });
 });

@@ -15,6 +15,13 @@
     <div class="container">
         <h1>PDF編集ツール</h1>
 
+        <!-- 更新通知バナー -->
+        <div id="update-banner" class="update-banner" style="display: none;">
+            <span id="update-message"></span>
+            <button id="update-button" class="update-btn">更新する</button>
+            <button id="dismiss-update" class="dismiss-btn">×</button>
+        </div>
+
         <!-- タブナビゲーション -->
         <!-- グループタブ（上段） -->
         <div class="group-tab-navigation">
@@ -41,6 +48,7 @@
                 <button class="tab-button" data-tab="edit">ページ編集</button>
                 <button class="tab-button" data-tab="reorder">ページ並べ替え</button>
                 <button class="tab-button" data-tab="mask">マスキング</button>
+                <button class="tab-button" data-tab="symbol">シンボルマーク追加</button>
             </div>
 
             <!-- 保存グループ -->
@@ -150,6 +158,7 @@
                 <div class="button-group">
                     <button id="rotate-left-button" disabled>↺ 左90°回転</button>
                     <button id="rotate-right-button" disabled>↻ 右90°回転</button>
+                    <button id="rotate-180-button" disabled>⟲ 180°回転</button>
                     <button id="clear-selection-button-edit" disabled>選択をクリア</button>
                 </div>
                 <div class="slider-container">
@@ -255,6 +264,159 @@
             </div>
         </div>
 
+        <!-- シンボルマーク追加タブ -->
+        <div id="symbol-tab" class="tab-content">
+            <div class="placeholder">
+                <p>←「PDFの追加とクリア」タブでファイルをアップロードすると、ここにプレビューが表示されます。</p>
+            </div>
+            <div class="controls sticky">
+                <h2>シンボルマーク追加</h2>
+                <p class="description">スキャン時の補正用シンボルマークを用紙の四隅に追加します。各コーナーごとに位置（ポイント数）とシンボルの種類を設定してください。</p>
+
+                <div class="symbol-settings-container">
+                    <!-- 左上 -->
+                    <div class="symbol-corner-setting">
+                        <h4>左上</h4>
+                        <div class="symbol-control-row">
+                            <label for="symbol-select-topleft">シンボル:</label>
+                            <select id="symbol-select-topleft" class="symbol-select">
+                                <option value="">なし</option>
+                                <option value="■" selected>■（黒四角）</option>
+                                <option value="□">□（白四角）</option>
+                                <option value="◆">◆（黒ダイヤ）</option>
+                                <option value="◇">◇（白ダイヤ）</option>
+                                <option value="●">●（黒丸）</option>
+                                <option value="○">○（白丸）</option>
+                                <option value="★">★（黒星）</option>
+                                <option value="☆">☆（白星）</option>
+                                <option value="▲">▲（黒三角）</option>
+                                <option value="△">△（白三角）</option>
+                            </select>
+                        </div>
+                        <div class="symbol-control-row">
+                            <label for="symbol-x-topleft">横位置:</label>
+                            <input type="range" id="symbol-x-topleft" class="symbol-slider" min="5" max="100" value="20">
+                            <span id="symbol-x-value-topleft" class="symbol-value">20</span>pt
+                        </div>
+                        <div class="symbol-control-row">
+                            <label for="symbol-y-topleft">縦位置:</label>
+                            <input type="range" id="symbol-y-topleft" class="symbol-slider" min="5" max="100" value="20">
+                            <span id="symbol-y-value-topleft" class="symbol-value">20</span>pt
+                        </div>
+                    </div>
+
+                    <!-- 右上 -->
+                    <div class="symbol-corner-setting">
+                        <h4>右上</h4>
+                        <div class="symbol-control-row">
+                            <label for="symbol-select-topright">シンボル:</label>
+                            <select id="symbol-select-topright" class="symbol-select">
+                                <option value="">なし</option>
+                                <option value="■" selected>■（黒四角）</option>
+                                <option value="□">□（白四角）</option>
+                                <option value="◆">◆（黒ダイヤ）</option>
+                                <option value="◇">◇（白ダイヤ）</option>
+                                <option value="●">●（黒丸）</option>
+                                <option value="○">○（白丸）</option>
+                                <option value="★">★（黒星）</option>
+                                <option value="☆">☆（白星）</option>
+                                <option value="▲">▲（黒三角）</option>
+                                <option value="△">△（白三角）</option>
+                            </select>
+                        </div>
+                        <div class="symbol-control-row">
+                            <label for="symbol-x-topright">横位置:</label>
+                            <input type="range" id="symbol-x-topright" class="symbol-slider" min="5" max="100" value="20">
+                            <span id="symbol-x-value-topright" class="symbol-value">20</span>pt
+                        </div>
+                        <div class="symbol-control-row">
+                            <label for="symbol-y-topright">縦位置:</label>
+                            <input type="range" id="symbol-y-topright" class="symbol-slider" min="5" max="100" value="20">
+                            <span id="symbol-y-value-topright" class="symbol-value">20</span>pt
+                        </div>
+                    </div>
+
+                    <!-- 左下 -->
+                    <div class="symbol-corner-setting">
+                        <h4>左下</h4>
+                        <div class="symbol-control-row">
+                            <label for="symbol-select-bottomleft">シンボル:</label>
+                            <select id="symbol-select-bottomleft" class="symbol-select">
+                                <option value="">なし</option>
+                                <option value="■" selected>■（黒四角）</option>
+                                <option value="□">□（白四角）</option>
+                                <option value="◆">◆（黒ダイヤ）</option>
+                                <option value="◇">◇（白ダイヤ）</option>
+                                <option value="●">●（黒丸）</option>
+                                <option value="○">○（白丸）</option>
+                                <option value="★">★（黒星）</option>
+                                <option value="☆">☆（白星）</option>
+                                <option value="▲">▲（黒三角）</option>
+                                <option value="△">△（白三角）</option>
+                            </select>
+                        </div>
+                        <div class="symbol-control-row">
+                            <label for="symbol-x-bottomleft">横位置:</label>
+                            <input type="range" id="symbol-x-bottomleft" class="symbol-slider" min="5" max="100" value="20">
+                            <span id="symbol-x-value-bottomleft" class="symbol-value">20</span>pt
+                        </div>
+                        <div class="symbol-control-row">
+                            <label for="symbol-y-bottomleft">縦位置:</label>
+                            <input type="range" id="symbol-y-bottomleft" class="symbol-slider" min="5" max="100" value="20">
+                            <span id="symbol-y-value-bottomleft" class="symbol-value">20</span>pt
+                        </div>
+                    </div>
+
+                    <!-- 右下 -->
+                    <div class="symbol-corner-setting">
+                        <h4>右下</h4>
+                        <div class="symbol-control-row">
+                            <label for="symbol-select-bottomright">シンボル:</label>
+                            <select id="symbol-select-bottomright" class="symbol-select">
+                                <option value="">なし</option>
+                                <option value="■">■（黒四角）</option>
+                                <option value="□" selected>□（白四角）</option>
+                                <option value="◆">◆（黒ダイヤ）</option>
+                                <option value="◇">◇（白ダイヤ）</option>
+                                <option value="●">●（黒丸）</option>
+                                <option value="○">○（白丸）</option>
+                                <option value="★">★（黒星）</option>
+                                <option value="☆">☆（白星）</option>
+                                <option value="▲">▲（黒三角）</option>
+                                <option value="△">△（白三角）</option>
+                            </select>
+                        </div>
+                        <div class="symbol-control-row">
+                            <label for="symbol-x-bottomright">横位置:</label>
+                            <input type="range" id="symbol-x-bottomright" class="symbol-slider" min="5" max="100" value="20">
+                            <span id="symbol-x-value-bottomright" class="symbol-value">20</span>pt
+                        </div>
+                        <div class="symbol-control-row">
+                            <label for="symbol-y-bottomright">縦位置:</label>
+                            <input type="range" id="symbol-y-bottomright" class="symbol-slider" min="5" max="100" value="20">
+                            <span id="symbol-y-value-bottomright" class="symbol-value">20</span>pt
+                        </div>
+                    </div>
+                </div>
+
+                <div class="symbol-size-setting">
+                    <label for="symbol-size-slider">シンボルサイズ:</label>
+                    <input type="range" id="symbol-size-slider" min="8" max="36" value="14">
+                    <span id="symbol-size-value">14</span>pt
+                </div>
+
+                <div class="button-group">
+                    <button id="apply-symbol-button" disabled>シンボルマークを追加</button>
+                    <button id="preview-symbol-button" disabled>プレビュー</button>
+                </div>
+                <div class="slider-container">
+                    <label for="size-slider-symbol">サムネイルサイズ:</label>
+                    <input type="range" id="size-slider-symbol" min="100" max="400" value="150">
+                </div>
+            </div>
+            <div id="gallery-symbol" class="gallery"></div>
+        </div>
+
         <!-- 個別ファイル保存タブ -->
         <div id="split-files-tab" class="tab-content">
             <div class="placeholder">
@@ -314,6 +476,23 @@
                 </div>
                 <button id="save-image-pdf-button" disabled>画像PDFとしてダウンロード</button>
 
+                <h3 style="margin-top: 30px;">白黒（グレースケール）PDFとして保存</h3>
+                <p>PDFを白黒（グレースケール）に変換して保存します。カラーPDFをモノクロにしてファイルサイズを削減できます。</p>
+                <button id="save-grayscale-pdf-button" disabled>白黒PDFとしてダウンロード</button>
+
+                <h3 style="margin-top: 30px;">白黒（グレースケール）画像PDFとして保存</h3>
+                <p>PDFを白黒の画像ベースPDFに変換して保存します。フォント問題も解決し、ファイルサイズも削減できます。</p>
+                <div style="margin: 10px 0; display: flex; align-items: center; gap: 10px;">
+                    <label for="grayscale-image-pdf-dpi-select">画質（DPI）:</label>
+                    <select id="grayscale-image-pdf-dpi-select" style="padding: 5px 10px; font-size: 14px;">
+                        <option value="96">96 DPI（低画質・小サイズ）</option>
+                        <option value="150" selected>150 DPI（標準画質）</option>
+                        <option value="200">200 DPI（高画質）</option>
+                        <option value="300">300 DPI（最高画質・大サイズ）</option>
+                    </select>
+                </div>
+                <button id="save-grayscale-image-pdf-button" disabled>白黒画像PDFとしてダウンロード</button>
+
                 <div class="slider-container">
                     <label for="size-slider-save">サムネイルサイズ:</label>
                     <input type="range" id="size-slider-save" min="100" max="400" value="150">
@@ -353,6 +532,10 @@
             </div>
         </div>
     </div>
+
+    <footer style="text-align: center; padding: 20px; margin-top: 40px; color: #666; font-size: 12px; border-top: 1px solid #e0e0e0;">
+        &copy; 2025-2026 IshiyamaYoshihiro
+    </footer>
 
     <script src="/static/script.js"></script>
 </body>
